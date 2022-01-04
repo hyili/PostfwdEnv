@@ -1,0 +1,30 @@
+#
+# postfwd3 2.02
+# bind sender & client_address together into sender_from_client_address
+#
+# by hyili
+
+%postfwd_items_plugin = (
+    "sender_from_client_address" => sub {
+        my $request = shift;
+
+        $sender = $request->{sender_localpart}.'@'.$request->{sender_domain};
+        $client_address = $request->{client_address};
+
+        $request->{sender_from_client_address} = $sender.'~'.$client_address;
+        $request->{sender_from_client_address_to_external} = $sender.'~'.$client_address.'~toExternal';
+        $request->{sender_from_client_address_to_internal} = $sender.'~'.$client_address.'~toInternal';
+    },
+);
+
+%postfwd_actions_plugin = (
+    "dump_request" => sub {
+        my($index, $now, $mycmd, $myarg, $myline, $request) = @_;
+        my($myaction) = 'DUNNO';
+        my($stop) = 0;
+
+        map { log_info "[DUMP] rule=$index, Attribute: $_=$request->{$_}" } (keys %{$request});
+
+        return ($stop, $index, $myaction, $myline);
+    },
+);
